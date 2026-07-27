@@ -64,12 +64,57 @@ Todo `git push` na `main` republica sozinho em ~30 segundos.
 
 ---
 
-## 3. Para o dev — mover para `live.studioartemis.co` (opcional)
+## 3. Para o dev — publicar no domínio da Artemis
 
-A página funciona hoje no domínio do GitHub. Só siga isto se quiser o subdomínio próprio.
-São dois passos e nada no código muda.
+Dois caminhos. O **A é o mais simples** e não encosta em DNS.
 
-**Passo 1 — DNS** (onde estiver o DNS do `studioartemis.co`; hoje é Cloudflare):
+### Caminho A — `studioartemis.co/live/` (recomendado, sem DNS)
+
+O `studioartemis.co` roda WordPress e o domínio já aponta para a hospedagem. Basta colocar
+os arquivos numa pasta. O caminho `/live/` está livre (retorna 404 hoje).
+
+1. Abrir FTP ou o gerenciador de arquivos da hospedagem.
+2. Ir na raiz do WordPress (onde ficam `wp-config.php`, `wp-content/`, `wp-admin/`).
+3. Criar a pasta `live/`.
+4. Subir `index.html` e `obrigado.html` para dentro dela.
+
+```
+public_html/
+  ├── wp-config.php
+  ├── wp-content/
+  └── live/
+       ├── index.html
+       └── obrigado.html
+```
+
+Pronto — `https://studioartemis.co/live/` responde na hora. Sem DNS, sem propagação,
+sem plugin, sem criar página no WordPress.
+
+> Só esses dois arquivos. Não precisa subir `assets/` — a foto está embutida em base64
+> dentro do HTML, junto com CSS, JS e a fonte. Zero requisição externa.
+
+**Se der 404** (tema ou plugin capturando todas as rotas), no `.htaccess` da raiz,
+**antes** do bloco `# BEGIN WordPress`:
+
+```apache
+RewriteEngine On
+RewriteRule ^live/ - [L]
+```
+
+Em Nginx:
+
+```nginx
+location ^~ /live/ { try_files $uri $uri/ =404; }
+```
+
+Se o site tiver cache (WP Rocket, LiteSpeed, Cloudflare), limpar depois do upload.
+
+### Caminho B — `live.studioartemis.co` (subdomínio, exige 1 registro de DNS)
+
+Não existe subdomínio sem registro de DNS — é o que define um subdomínio. Mas é um
+registro só, feito uma vez.
+
+**Passo 1 — Cloudflare** (é onde está o DNS do `studioartemis.co`):
 
 | Campo | Valor |
 |---|---|
@@ -78,32 +123,24 @@ São dois passos e nada no código muda.
 | Target | `helio-debug.github.io` |
 | Proxy | **DNS only** — nuvem cinza |
 
-> Se o proxy ficar laranja, o GitHub não consegue validar o domínio e não emite o certificado.
-> O site cai em erro de SSL. Esse é o único detalhe que costuma dar problema.
+> Com o proxy laranja o GitHub não valida o domínio, não emite certificado e o site cai
+> em erro de SSL. É o único detalhe que costuma dar problema.
 
-**Passo 2 — repo:** o arquivo `CNAME.exemplo` já contém o domínio. Renomeie para `CNAME`,
-commite e suba:
+**Passo 2 — repo:** o `CNAME.exemplo` já contém o domínio. Renomear e subir:
 
 ```bash
 mv CNAME.exemplo CNAME && git add -A && git commit -m "custom domain" && git push
 ```
 
-O GitHub lê o arquivo `CNAME` e configura o domínio sozinho. Depois que o certificado
-for emitido (alguns minutos), ligue o HTTPS:
+O GitHub lê o arquivo e configura o domínio sozinho. Quando o certificado sair
+(alguns minutos), ligar o HTTPS:
 
 ```bash
 gh api -X PUT repos/helio-debug/live-mktops/pages -F https_enforced=true
 ```
 
-Para usar o domínio raiz em vez do subdomínio, troque o conteúdo do `CNAME` pelo domínio
-e use quatro registros `A`: `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`.
-
-### Alternativa sem GitHub — WordPress
-
-O `studioartemis.co` roda WordPress. Subindo os arquivos por FTP ou pelo gerenciador de
-arquivos da hospedagem para uma pasta `live/` na raiz, a página responde em
-`studioartemis.co/live/` na hora — sem DNS, sem propagação. São 3 arquivos: `index.html`,
-`obrigado.html` e a pasta `assets/`.
+Para usar o domínio raiz em vez do subdomínio, trocar o conteúdo do `CNAME` pelo domínio
+e usar quatro registros `A`: `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`.
 
 ---
 
