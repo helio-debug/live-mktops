@@ -45,40 +45,69 @@ O payload enviado via `POST` (JSON):
 
 ### `obrigado.html` — bloco no final do arquivo
 
+Já preenchido com o grupo da live:
+
 ```js
-var WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/COLE-SEU-LINK-AQUI";
+var WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/J28wV9mCUYf4f8ubTB4Mk2";
 ```
+
+Se o convite do grupo for trocado, é só substituir essa linha e dar push.
 
 ---
 
-## 2. Colocar no ar
+## 2. Status: já está no ar
 
-O arquivo `CNAME` já está preenchido com **`live.studioartemis.co`** e o `.nojekyll` já está incluído.
+**URL de produção:** https://helio-debug.github.io/live-mktops/
 
-### Caminho A — GitHub Pages (um comando)
+GitHub Pages servindo `main` / `(root)`, HTTPS automático, sem dependência de DNS.
+Todo `git push` na `main` republica sozinho em ~30 segundos.
+
+---
+
+## 3. Para o dev — mover para `live.studioartemis.co` (opcional)
+
+A página funciona hoje no domínio do GitHub. Só siga isto se quiser o subdomínio próprio.
+São dois passos e nada no código muda.
+
+**Passo 1 — DNS** (onde estiver o DNS do `studioartemis.co`; hoje é Cloudflare):
+
+| Campo | Valor |
+|---|---|
+| Type | `CNAME` |
+| Name | `live` |
+| Target | `helio-debug.github.io` |
+| Proxy | **DNS only** — nuvem cinza |
+
+> Se o proxy ficar laranja, o GitHub não consegue validar o domínio e não emite o certificado.
+> O site cai em erro de SSL. Esse é o único detalhe que costuma dar problema.
+
+**Passo 2 — repo:** o arquivo `CNAME.exemplo` já contém o domínio. Renomeie para `CNAME`,
+commite e suba:
 
 ```bash
-./deploy.sh <usuario-ou-org>/<repositorio>
+mv CNAME.exemplo CNAME && git add -A && git commit -m "custom domain" && git push
 ```
 
-Depois, uma vez só:
+O GitHub lê o arquivo `CNAME` e configura o domínio sozinho. Depois que o certificado
+for emitido (alguns minutos), ligue o HTTPS:
 
-- **GitHub → Settings → Pages** → Source: *Deploy from a branch* → `main` / `(root)`
-- **GitHub → Settings → Pages → Custom domain**: `live.studioartemis.co` → Save → marcar **Enforce HTTPS**
-- **Cloudflare** (o DNS do `studioartemis.co` está lá): `CNAME` | Nome `live` | Destino `<usuario>.github.io` | **Proxy: DNS only** (nuvem cinza — com a nuvem laranja o GitHub não emite o certificado)
+```bash
+gh api -X PUT repos/helio-debug/live-mktops/pages -F https_enforced=true
+```
 
-Se preferir o domínio raiz em vez do subdomínio, troque o `CNAME` pelo domínio e use quatro
-registros `A` para `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`.
+Para usar o domínio raiz em vez do subdomínio, troque o conteúdo do `CNAME` pelo domínio
+e use quatro registros `A`: `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`.
 
-### Caminho B — direto no WordPress (mais rápido, sem DNS)
+### Alternativa sem GitHub — WordPress
 
-O `studioartemis.co` roda WordPress atrás da Cloudflare. Subindo os arquivos por FTP ou pelo
-gerenciador de arquivos da hospedagem para uma pasta `live/` na raiz, a página fica no ar em
-`studioartemis.co/live/` na hora — sem mexer em DNS nem esperar propagação.
+O `studioartemis.co` roda WordPress. Subindo os arquivos por FTP ou pelo gerenciador de
+arquivos da hospedagem para uma pasta `live/` na raiz, a página responde em
+`studioartemis.co/live/` na hora — sem DNS, sem propagação. São 3 arquivos: `index.html`,
+`obrigado.html` e a pasta `assets/`.
 
 ---
 
-## 3. Pixels e rastreamento
+## 4. Pixels e rastreamento
 
 Cole antes de `</head>` nas duas páginas (Meta Pixel, GA4, GTM).
 O evento de conversão deve disparar no **carregamento de `obrigado.html`** — o redirecionamento
@@ -86,7 +115,7 @@ preserva a query string, então as UTMs continuam disponíveis lá.
 
 ---
 
-## 4. Checagens já feitas
+## 5. Checagens já feitas
 
 | Item | Status |
 |---|---|
